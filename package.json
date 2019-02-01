@@ -1,0 +1,32 @@
+{
+  "name": "gouge",
+  "version": "0.0.1",
+  "description": "H2O2 Project",
+  "main": "index.js",
+  "dependencies": {
+    "bufferutil": "^4.0.1",
+    "ws": "^6.1.2"
+  },
+  "devDependencies": {
+    "@types/ws": "^6.0.1",
+    "@types/jest": "^23.3.12",
+    "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
+    "ts-loader": "^5.3.3",
+    "tslint": "^5.12.1",
+    "typescript": "^3.2.2",
+    "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.1"
+  },
+  "test": "jest",
+  "scripts": {
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.dev.tencent.com/is0/gouge.git"
+  },
+  "author": "Xin Yu <scaner@gmail.com>",
+  "license": "ISC"
+}
