@@ -9,6 +9,7 @@ export enum Type {
   Nego = 16385,
   Ack,
   Shutdown,
+  Shutdown2,
 }
 
 export interface Nego {
@@ -50,10 +51,14 @@ export function BuildShutdown(): Buffer {
   return BuildHeadOnly(Type.Shutdown);
 }
 
+function BuildShutdown2(): Buffer {
+  return BuildHeadOnly(Type.Shutdown2);
+}
 
-const P = {
+const Builder = {
   nego: BuildNego,
   shutdown: BuildShutdown,
+  shutdown2: BuildShutdown2,
 };
 
-export default P;
+export default Builder;

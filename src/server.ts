@@ -1,15 +1,12 @@
 import WebSocket from "ws";
-import { Hyperlink, defaultConfig as defaultHyperlinkConfig } from "./hyperlink";
+import { SuperLink, defaultConfig as defaultLinkConfig } from "./superlink";
 import { GougeConfig } from "./config";
 import { SmartBuffer } from "smart-buffer";
 import { Link } from "./link";
 
-type Data = WebSocket.Data;
-
-
 class GougeServer {
   c: GougeConfig;
-  hyper!: Hyperlink;
+  links!: SuperLink;
   server!: WebSocket.Server;
   socketSerial: number;
 
@@ -24,10 +21,10 @@ class GougeServer {
     reader.readBuffer(32);
     reader.readBuffer(32);
 
-    l.id = reader.readInt32BE();
-    l.serial = this.socketSerial;
+    l.slotNumber = reader.readInt32BE();
+    l.linkSerial = this.socketSerial;
     this.socketSerial++;
-    this.hyper.add(l);
+    this.links.add(l);
   }
 
   onConnection(ws: WebSocket) {
@@ -40,18 +37,16 @@ class GougeServer {
 
   run() {
     console.log("listen on: %d", this.c.port);
-    this.hyper = new Hyperlink(this.c.hyperlink);
+    this.links = new SuperLink(this.c.link);
     this.server = new WebSocket.Server({port: this.c.port});
     this.server.on("connection", this.onConnection);
   }
 }
 
-
 const C: GougeConfig = {
   port: 3000,
-  hyperlink: defaultHyperlinkConfig,
+  link: defaultLinkConfig,
 };
-
 
 const server = new GougeServer(C);
 server.run();

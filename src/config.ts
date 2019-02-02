@@ -1,6 +1,6 @@
-import { Config as HyperlinkConfig } from "./hyperlink";
+import { Config as LinkConfig } from "./superlink";
 
 export interface GougeConfig {
   port: number;
-  hyperlink: HyperlinkConfig;
+  link: LinkConfig;
 }
