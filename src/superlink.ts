@@ -1,9 +1,12 @@
 import CircularBuffer from "circularbuffer";
 import { Link, Data } from "./link";
 import P, { packetLength } from "./packet";
+import { Endpoint } from "./endpoint";
+import { Channel } from "./channel";
 import { D } from "./constants";
 
 const OutQueueSize = 128;
+
 const debug = D("superlink");
 
 export interface Config {
@@ -11,6 +14,7 @@ export interface Config {
   lifecycle: number;
   size: number;
   target?: string;
+  channelSize: number;
 }
 
 interface SendOp {
@@ -39,6 +43,10 @@ export class SuperLink {
   outPackets: number = 0;
   outBytes: number = 0;
 
+  endpoints: Map<number, Endpoint>;
+  channels: Array<Channel>;
+  chIndex: number = 0;
+
   constructor(config: Config) {
     this.c = config;
     this.links = new Array(this.c.size);
@@ -47,6 +55,9 @@ export class SuperLink {
     this.lastCur = 0;
 
     this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
+
+    this.endpoints = new Map();
+    this.channels = new Array<Channel>()
   }
 
   serverActivate() {
@@ -73,10 +84,6 @@ export class SuperLink {
     this.lastCur = this.cur;
     this.cur = Date.now();
 
-    /*
-    debug("tick i:%d/%d o:%d/%d",
-      this.inBytes, this.inPackets, this.outBytes, this.outPackets);
-    */
     const _size = this.c.size;
     // if active
     if (this.active) {
