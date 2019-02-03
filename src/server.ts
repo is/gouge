@@ -3,7 +3,11 @@ import { SuperLink } from "./superlink";
 import { GougeConfig, readConfig } from "./config";
 import { Link } from "./link";
 import { parseNego } from "./packet";
-import { DEFAULT_CF } from "./constants";
+import { DEFAULT_CF, D } from "./constants";
+
+const debug = D("server");
+
+const REVISION = "0.1r1";
 
 class GougeServer {
   c: GougeConfig;
@@ -29,10 +33,13 @@ class GougeServer {
   }
 
   run() {
-    console.log("listen on: %d", this.c.port);
+    debug("revision:%s, listen:%d", REVISION, this.c.port);
     this.links = new SuperLink(this.c.link);
+    this.links.serverActivate();
     this.server = new WebSocket.Server({port: this.c.port});
-    this.server.on("connection", this.onConnection.bind(this));
+    this.server.on("connection", (ws: WebSocket) => {
+      this.onConnection(ws);
+    });
   }
 }
 

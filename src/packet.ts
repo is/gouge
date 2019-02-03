@@ -6,10 +6,12 @@ export interface Packet {
 }
 
 export enum Type {
+  Base = 16384,
   Nego = 16385,
   Ack,
   Shutdown,
   Shutdown2,
+  DummyData = Base + 2048 + 1,
 }
 
 export interface Nego {
@@ -19,6 +21,13 @@ export interface Nego {
   slotNumber: number;
 }
 
+export function packetLen(p: Packet) {
+  if (p instanceof Buffer) {
+    return p.length;
+  }
+  if (p instanceof Array) {
+  }
+}
 
 export function BuildNego(sign: string, id: number): Buffer {
   const writer = new SmartBuffer({size: 2 + 16 + 16 + 4});
@@ -40,25 +49,33 @@ export function parseNego(buf: Buffer): Nego {
   };
 }
 
-function BuildHeadOnly(t: Type): Buffer {
+function buildHeadOnly(t: Type): Buffer {
   const buf = Buffer.alloc(2);
   buf.writeInt16BE(t, 0);
   return buf;
 }
 
-
-export function BuildShutdown(): Buffer {
-  return BuildHeadOnly(Type.Shutdown);
+export function buildShutdown(): Buffer {
+  return buildHeadOnly(Type.Shutdown);
 }
 
-function BuildShutdown2(): Buffer {
-  return BuildHeadOnly(Type.Shutdown2);
+function buildShutdown2(): Buffer {
+  return buildHeadOnly(Type.Shutdown2);
+}
+
+function buildDummyData(id: number, size: number): Buffer {
+  const buf = Buffer.alloc(size + 8);
+  buf.writeInt16BE(Type.DummyData, 0);
+  buf.writeInt16BE(id, 2);
+  buf.writeInt32BE(size, 4);
+  return buf;
 }
 
 const Builder = {
   nego: BuildNego,
-  shutdown: BuildShutdown,
-  shutdown2: BuildShutdown2,
+  shutdown: buildShutdown,
+  shutdown2: buildShutdown2,
+  dummyData: buildDummyData,
 };
 
 export default Builder;

@@ -1,9 +1,9 @@
 import { SuperLink } from "./superlink";
 import WebSocket from "ws";
 import P, { Type as Cmd } from "./packet";
+import { D } from "./constants";
 
 export type Data = WebSocket.Data;
-
 export enum State {
   Init = 0,
   Ready = 1,
@@ -13,8 +13,10 @@ export enum State {
 
 let linkSerial: number = -1;
 function nextLinkSerial(): number {
-  return linkSerial++;
+  return ++linkSerial;
 }
+
+const debug = D("link");
 
 export class Link {
   ws: WebSocket;
@@ -25,6 +27,11 @@ export class Link {
   slotNumber: number;
   serial: number;
   writable: boolean;
+
+  inBytes: number = 0;
+  outBytes: number = 0;
+  inPackets: number = 0;
+  outPackets: number = 0;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
@@ -38,15 +45,17 @@ export class Link {
     const _ws = <any> this.ws;
     _ws._socket.write = Link.writeMod(_ws._socket.write, this);
     _ws._socket.on("drain", this.onDrain.bind(this));
+
     this.parent = h;
     this.createTime = Date.now();
-    this.ws.on("message", this.onMessage);
+    this.ws.on("message", this.onMessage.bind(this));
     this.state = State.Ready;
   }
 
   isReady(): boolean {
     return this.state == State.Ready;
   }
+
   isClosed(): boolean {
     return this.state == State.Closed;
   }
@@ -77,6 +86,7 @@ export class Link {
   }
 
   onClose(ws: WebSocket) {
+    debug("onclose %d", this.serial);
     this.detach();
     delete this.parent;
 
@@ -91,6 +101,9 @@ export class Link {
   }
 
   onMessage(data: Buffer) {
+    this.inPackets++;
+    this.inBytes += data.length;
+
     const cmd = data.readInt16BE(0);
 
     switch (cmd) {
@@ -103,7 +116,20 @@ export class Link {
         this.close();
         return;
       }
+
+      case Cmd.DummyData: {
+        this.dummyData(data);
+        return;
+      }
     }
+  }
+
+
+  dummyData(data: Buffer) {
+    // const cmd = data.readInt16BE(0);
+    const id = data.readInt16BE(2);
+    const size = data.readInt32BE(4);
+    debug("dummy data %s +%s", id, this.serial);
   }
 
   onDrain() {

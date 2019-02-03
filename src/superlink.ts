@@ -1,8 +1,10 @@
 import CircularBuffer from "circularbuffer";
 import { Link, Data } from "./link";
 import P from "./packet";
+import { D } from "./constants";
 
 const OutQueueSize = 128;
+const debug = D("superlink");
 
 export interface Config {
   code: string;
@@ -42,10 +44,17 @@ export class SuperLink {
     this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
   }
 
-  connect(target?: string) {
+  serverActivate() {
+    this.tick();
+    setInterval(this.run, 500, this);
+  }
+
+
+  activate(target?: string) {
     if (target) {
       this.c.target = target;
     }
+    debug("connect target:%s", this.c.target);
     this.active = true;
     this.tick();
     setInterval(this.run, 500, this);
@@ -56,9 +65,9 @@ export class SuperLink {
   }
 
   tick() {
-    // update current timestamp
     this.lastCur = this.cur;
     this.cur = Date.now();
+    // L.debug("tick %d", this.cur);
 
     const _size = this.c.size;
     // if active
@@ -68,7 +77,7 @@ export class SuperLink {
         if (this.links[i] === undefined) {
           continue;
         }
-        if (this.links[i].isReady() && this.links[i].createTime - this.cur > this.c.lifecycle) {
+        if (this.links[i].isReady() && this.cur - this.links[i].createTime > this.c.lifecycle) {
           this.links[i].graceClose();
         }
       }
@@ -76,13 +85,15 @@ export class SuperLink {
       // create new link
       if (this.cur - this.lastNewLink > this.newLinkPeriod) {
         let freeSlot = -1;
+
         for (let i = 0; i < _size; ++i) {
           const l = this.links[i];
-          if (l !== undefined) {
-          } else {
+          if (l === undefined) {
             freeSlot = i;
+            break;
           }
         }
+
         if (freeSlot >= 0) {
           this.newActiveLink(freeSlot);
           this.lastNewLink = this.cur;
@@ -105,18 +116,28 @@ export class SuperLink {
         this.writableLinks += 1;
       }
     }
+    if (this.activeLinks > 0) {
+      this.sendSomething();
+    }
   }
 
+  sendSomething() {
+    for (let i = 0; i < 100; ++i) {
+      this.write(P.dummyData(i, 1024));
+    }
+  }
 
   newActiveLink(slotNumber: number): void {
     const link = Link.create(slotNumber, this.c.target!);
     link.ws.once("open", () => {
       this.add(link);
     });
+    link.ws.on("close", link.onClose.bind(link));
   }
 
 
   add(link: Link) {
+    debug("add %d %d", link.slotNumber, link.serial);
     this.resetLink(link.slotNumber);
     this.links[link.slotNumber] = link;
     link.ws.send(P.nego(this.c.code, link.slotNumber));
@@ -158,7 +179,7 @@ export class SuperLink {
         this.outIndex = 0;
       }
       const l = this.links[this.outIndex];
-      if (l.isReady() && l.writable) {
+      if (l !== undefined && l.isReady() && l.writable) {
         return l;
       }
     }

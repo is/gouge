@@ -12,13 +12,12 @@ class GougeClient {
   }
 
   fire() {
-    this.link.connect();
+    this.link.activate();
   }
 }
 
 const cf = readConfig(DEFAULT_CF);
 const client = new GougeClient(cf);
-
 client.fire();
 
 
