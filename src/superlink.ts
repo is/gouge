@@ -44,7 +44,7 @@ export class SuperLink  extends EventEmitter {
     this.outQueue = new CircularBuffer<SendOp>(OutQueueSize);
     this.flushOutNextTipFlag = false;
 
-    this.on("linkdrain", this.onSubDrain);
+    this.on("linkdrain", this.onLinkDrain);
   }
 
   add(link: Link) {
@@ -57,11 +57,10 @@ export class SuperLink  extends EventEmitter {
   detach(l: Link) {
     if (this.links[l.slotNumber] == l) {
       delete this.links[l.slotNumber];
-      if (l.writable) {
+      if (l.writable && l.isReady()) {
         this.writableLinks -= 1;
       }
     }
-    delete l.group;
   }
 
   resetLink(id: number) {
@@ -108,7 +107,7 @@ export class SuperLink  extends EventEmitter {
     }
   }
 
-  onSubDrain(l: Link) {
+  onLinkDrain(l: Link) {
     this.outIndex = l.slotNumber;
     this.flushOut();
   }
