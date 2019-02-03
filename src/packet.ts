@@ -16,7 +16,7 @@ export interface Nego {
   cmd: Type;
   sign: string;
   linkId: string;
-  socketId: number;
+  slotNumber: number;
 }
 
 
@@ -36,7 +36,7 @@ export function parseNego(buf: Buffer): Nego {
     cmd: reader.readUInt16BE(),
     sign: reader.readString(16),
     linkId: reader.readString(16),
-    socketId: reader.readInt32BE(),
+    slotNumber: reader.readInt32BE(),
   };
 }
 

@@ -1,29 +1,22 @@
 import WebSocket from "ws";
-import { SuperLink, defaultConfig as defaultLinkConfig } from "./superlink";
-import { GougeConfig } from "./config";
-import { SmartBuffer } from "smart-buffer";
+import { SuperLink } from "./superlink";
+import { GougeConfig, readConfig } from "./config";
 import { Link } from "./link";
+import { parseNego } from "./packet";
+import { DEFAULT_CF } from "./constants";
 
 class GougeServer {
   c: GougeConfig;
   links!: SuperLink;
   server!: WebSocket.Server;
-  socketSerial: number;
 
   constructor(cf: GougeConfig) {
     this.c = cf;
-    this.socketSerial = 0;
   }
 
   negotiate(l: Link, message: Buffer) {
-    const reader = SmartBuffer.fromBuffer(message);
-    reader.readInt16BE();
-    reader.readBuffer(32);
-    reader.readBuffer(32);
-
-    l.slotNumber = reader.readInt32BE();
-    l.linkSerial = this.socketSerial;
-    this.socketSerial++;
+    const nego = parseNego(message);
+    l.slotNumber = nego.slotNumber;
     this.links.add(l);
   }
 
@@ -39,14 +32,11 @@ class GougeServer {
     console.log("listen on: %d", this.c.port);
     this.links = new SuperLink(this.c.link);
     this.server = new WebSocket.Server({port: this.c.port});
-    this.server.on("connection", this.onConnection);
+    this.server.on("connection", this.onConnection.bind(this));
   }
 }
 
-const C: GougeConfig = {
-  port: 3000,
-  link: defaultLinkConfig,
-};
+const cf = readConfig(DEFAULT_CF);
 
-const server = new GougeServer(C);
+const server = new GougeServer(cf);
 server.run();

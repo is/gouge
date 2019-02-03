@@ -11,6 +11,11 @@ export enum State {
   Closed = 3
 }
 
+let linkSerial: number = -1;
+function nextLinkSerial(): number {
+  return linkSerial++;
+}
+
 export class Link {
   ws: WebSocket;
   state: State;
@@ -18,14 +23,14 @@ export class Link {
   createTime!: number;
 
   slotNumber: number;
-  linkSerial: number;
+  serial: number;
   writable: boolean;
 
   constructor(ws: WebSocket) {
     this.ws = ws;
     this.state = State.Init;
     this.slotNumber = -1;
-    this.linkSerial = -1;
+    this.serial = nextLinkSerial();
     this.writable = true;
   }
 
@@ -58,6 +63,13 @@ export class Link {
     this.state = State.Closed;
   }
 
+  graceClose() {
+    this.detach();
+    this.ws.send(P.shutdown());
+    this.state = State.Shutdown;
+  }
+
+
   shutdown() {
     this.detach();
     this.ws.send(P.shutdown2());
@@ -80,6 +92,7 @@ export class Link {
 
   onMessage(data: Buffer) {
     const cmd = data.readInt16BE(0);
+
     switch (cmd) {
       case Cmd.Shutdown: {
         this.shutdown();
@@ -110,5 +123,12 @@ export class Link {
     return function(this: any) {
       return link.writable = nativeFunction.apply(this as any, arguments);
     };
+  }
+
+  static create(slotNumber: number, target: string): Link {
+    const ws = new WebSocket(target);
+    const link = new Link(ws);
+    link.slotNumber = slotNumber;
+    return link;
   }
 }

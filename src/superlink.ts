@@ -1,56 +1,125 @@
 import CircularBuffer from "circularbuffer";
 import { Link, Data } from "./link";
-import Builder from "./packet";
-import { EventEmitter } from "events";
+import P from "./packet";
 
-const OutQueueSize = 64;
-const OutQueuePauseSize = 48;
-
+const OutQueueSize = 128;
 
 export interface Config {
   code: string;
   lifecycle: number;
   size: number;
+  target?: string;
 }
-
-export const defaultConfig: Config = {
-  code: "HALOWORD20190101",
-  lifecycle: 56,
-  size: 2
-};
 
 interface SendOp {
   data: Data;
   cb?: () => void;
 }
 
-export class SuperLink  extends EventEmitter {
-  active: boolean;
+export class SuperLink {
+  active: boolean = false;
   c: Config;
+
   links: Array<Link>;
-  outIndex: number;
-  writableLinks: number;
+  outIndex: number = -1;
+  writableLinks: number = 0;
+  activeLinks: number = 0;
   outQueue: CircularBuffer<SendOp>;
 
-  flushOutNextTipFlag: boolean;
+  cur: number;
+  lastCur: number = 0;
+
+  newLinkPeriod: number = 0;
+  lastNewLink: number = 0;
 
   constructor(config: Config) {
-    super();
-    this.active = false;
     this.c = config;
     this.links = new Array(this.c.size);
-    this.writableLinks = 0;
-    this.outIndex = -1;
     this.outQueue = new CircularBuffer<SendOp>(OutQueueSize);
-    this.flushOutNextTipFlag = false;
+    this.cur = Date.now();
+    this.lastCur = 0;
 
-    this.on("linkdrain", this.onLinkDrain);
+    this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
   }
+
+  connect(target?: string) {
+    if (target) {
+      this.c.target = target;
+    }
+    this.active = true;
+    this.tick();
+    setInterval(this.run, 500, this);
+  }
+
+  run(self: SuperLink) {
+    self.tick();
+  }
+
+  tick() {
+    // update current timestamp
+    this.lastCur = this.cur;
+    this.cur = Date.now();
+
+    const _size = this.c.size;
+    // if active
+    if (this.active) {
+      // find timeout link and closed
+      for (let i = 0; i < _size; ++i) {
+        if (this.links[i] === undefined) {
+          continue;
+        }
+        if (this.links[i].isReady() && this.links[i].createTime - this.cur > this.c.lifecycle) {
+          this.links[i].graceClose();
+        }
+      }
+
+      // create new link
+      if (this.cur - this.lastNewLink > this.newLinkPeriod) {
+        let freeSlot = -1;
+        for (let i = 0; i < _size; ++i) {
+          const l = this.links[i];
+          if (l !== undefined) {
+          } else {
+            freeSlot = i;
+          }
+        }
+        if (freeSlot >= 0) {
+          this.newActiveLink(freeSlot);
+          this.lastNewLink = this.cur;
+        }
+      }
+    }
+
+    this.activeLinks = 0;
+    this.writableLinks = 0;
+
+    for (let i = 0; i < _size; ++i) {
+      if (this.links[i] === undefined) {
+        continue;
+      }
+      if (!this.links[i].isReady()) {
+        continue;
+      }
+      this.activeLinks += 1;
+      if (this.links[i].writable) {
+        this.writableLinks += 1;
+      }
+    }
+  }
+
+
+  newActiveLink(slotNumber: number): void {
+    const link = Link.create(slotNumber, this.c.target!);
+    link.ws.once("open", () => {
+      this.add(link);
+    });
+  }
+
 
   add(link: Link) {
     this.resetLink(link.slotNumber);
     this.links[link.slotNumber] = link;
-    link.ws.send(Builder.nego(this.c.code, link.slotNumber));
+    link.ws.send(P.nego(this.c.code, link.slotNumber));
     link.attach(this);
   }
 
@@ -65,7 +134,7 @@ export class SuperLink  extends EventEmitter {
 
   resetLink(id: number) {
     const l = this.links[id];
-    if (id == undefined) {
+    if (l === undefined) {
       return;
     }
 
