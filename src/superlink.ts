@@ -1,6 +1,6 @@
 import CircularBuffer from "circularbuffer";
 import { Link, Data } from "./link";
-import P from "./packet";
+import P, { packetLength } from "./packet";
 import { D } from "./constants";
 
 const OutQueueSize = 128;
@@ -33,6 +33,11 @@ export class SuperLink {
 
   newLinkPeriod: number = 0;
   lastNewLink: number = 0;
+
+  inPackets: number = 0;
+  inBytes: number = 0;
+  outPackets: number = 0;
+  outBytes: number = 0;
 
   constructor(config: Config) {
     this.c = config;
@@ -67,8 +72,11 @@ export class SuperLink {
   tick() {
     this.lastCur = this.cur;
     this.cur = Date.now();
-    // L.debug("tick %d", this.cur);
 
+    /*
+    debug("tick i:%d/%d o:%d/%d",
+      this.inBytes, this.inPackets, this.outBytes, this.outPackets);
+    */
     const _size = this.c.size;
     // if active
     if (this.active) {
@@ -122,8 +130,10 @@ export class SuperLink {
   }
 
   sendSomething() {
-    for (let i = 0; i < 100; ++i) {
-      this.write(P.dummyData(i, 1024));
+    for (let i = 0; i < 30000; ++i) {
+      if (!this.send(P.dummyData(i, 1024))) {
+        break;
+      }
     }
   }
 
@@ -165,7 +175,8 @@ export class SuperLink {
     delete this.links[id];
   }
 
-  write(data: Data, cb?: () => void): boolean {
+  send(data: Data, cb?: () => void): boolean {
+    this.metricOut(data);
     this.outQueue.enq({data: data, cb: cb});
     this.flushOut();
     return this.outQueue.size == 0;
@@ -194,11 +205,34 @@ export class SuperLink {
       }
       const op = this.outQueue.deq()!;
       link.send(op.data, op.cb);
+      if (!link.writable) {
+        this.writableLinks -= 1;
+      }
     }
+    if (this.writableLinks == 0) {
+      debug("flashout writers blocked");
+    }
+  }
+
+  onDummyData(link: Link, data: Buffer) {
+    this.metricIn(data);
+  }
+
+  metricIn(data: Data) {
+    this.inPackets ++;
+    this.inBytes += packetLength(data);
+  }
+
+  metricOut(data: Data) {
+    this.outPackets ++;
+    this.outBytes += packetLength(data);
   }
 
   onLinkDrain(l: Link) {
     this.outIndex = l.slotNumber;
-    this.flushOut();
+    if (this.outQueue.size > 0) {
+      debug("on link drain: %d %d,  %d %d", l.slotNumber, l.serial, this.writableLinks, this.outQueue.size);
+      this.flushOut();
+    }
   }
 }

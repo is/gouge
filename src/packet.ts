@@ -1,3 +1,4 @@
+import ws from "ws";
 import { SmartBuffer } from "smart-buffer";
 import { NEGOTIATE_SIGN } from "./constants";
 
@@ -21,12 +22,21 @@ export interface Nego {
   slotNumber: number;
 }
 
-export function packetLen(p: Packet) {
+export function packetLength(p: ws.Data) {
   if (p instanceof Buffer) {
     return p.length;
   }
+
   if (p instanceof Array) {
+    let sum = 0;
+    const _p = p as Array<Buffer>;
+    for (const b of _p) {
+      sum += b.length;
+    }
+    return sum;
   }
+
+  return 0;
 }
 
 export function BuildNego(sign: string, id: number): Buffer {

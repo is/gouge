@@ -1,9 +1,10 @@
 import { SuperLink } from "./superlink";
 import WebSocket from "ws";
-import P, { Type as Cmd } from "./packet";
+import P, { Type as Cmd, packetLength } from "./packet";
 import { D } from "./constants";
 
 export type Data = WebSocket.Data;
+
 export enum State {
   Init = 0,
   Ready = 1,
@@ -97,6 +98,8 @@ export class Link {
   }
 
   send(data: Data, cb?: () => void): void {
+    this.outPackets ++;
+    this.outBytes += packetLength(data);
     this.ws.send(data, {}, cb);
   }
 
@@ -118,19 +121,24 @@ export class Link {
       }
 
       case Cmd.DummyData: {
-        this.dummyData(data);
+        this.onDummyData(data);
         return;
       }
     }
   }
 
 
+  onDummyData(data: Buffer) {
+    this.parent && this.parent.onDummyData(this, data);
+  }
+  /*
   dummyData(data: Buffer) {
     // const cmd = data.readInt16BE(0);
     const id = data.readInt16BE(2);
     const size = data.readInt32BE(4);
     debug("dummy data %s +%s", id, this.serial);
   }
+  */
 
   onDrain() {
     if (this.writable) {
@@ -142,6 +150,7 @@ export class Link {
     }
 
     this.writable = true;
+    this.parent.writableLinks += 1;
     this.parent.onLinkDrain(this);
   }
 

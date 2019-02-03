@@ -17,6 +17,8 @@
     "@types/js-yaml": "^3.12.0",
     "@types/ws": "^6.0.1",
     "jest": "^23.6.0",
+    "pino-debug": "^1.2.0",
+    "pino-pretty": "^2.5.0",
     "source-map-support": "^0.5.10",
     "ts-jest": "^23.10.5",
     "ts-loader": "^5.3.3",
