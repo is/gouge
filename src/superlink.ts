@@ -57,7 +57,7 @@ export class SuperLink {
     this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
 
     this.endpoints = new Map();
-    this.channels = new Array<Channel>()
+    this.channels = new Array<Channel>(this.c.channelSize);
   }
 
   serverActivate() {

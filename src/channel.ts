@@ -14,6 +14,7 @@ export interface Options {
   id: number;
   link: SuperLink;
   endpoint: Endpoint;
+  socket?: Socket;
 }
 
 
@@ -30,10 +31,23 @@ export class Channel {
     this.link = opts.link;
     this.endpoint = opts.endpoint;
     this.mode = opts.endpoint.mode;
+
+    if (opts.socket !== undefined) {
+      this.socket = opts.socket;
+    }
+
     this.state = ChannelState.INIT;
   }
 
-  setup() {
+  get socket(): Socket {
+    return this.s;
+  }
+
+  set socket(s: Socket) {
+    this.s = s;
+  }
+
+  start() {
     if (this.mode == EndpointMode.IN) {
       this.serverStart();
     } else {
@@ -42,10 +56,13 @@ export class Channel {
   }
 
   agentStart() {
+    // create socket
+    // connect to target
     // TODO:empty;
   }
 
   serverStart() {
-    // TODO:empty;
+    // send connect command to peer
+    // wait connected/error message
   }
 }
