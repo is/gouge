@@ -301,6 +301,7 @@ export class SuperLink {
   }
 
   onMessage(l: Link, cmd: number, data: Buffer) {
+    debug("on-message %d %s %d", l.slotNumber, Type[cmd], data.length);
     switch (cmd) {
       case Type.Open: {
         this.onMessage_Open(data);
@@ -349,7 +350,7 @@ export class SuperLink {
     if (ch === undefined) {
       return;
     }
-    ch.onTunnel_Data(p);
+    ch.onTunnel_MessageIn(p.seq, p);
   }
 
   onMessage_Ack(data: Buffer) {
@@ -367,7 +368,7 @@ export class SuperLink {
     if (ch === undefined) {
       return;
     }
-    ch.onTunnel_Close(p);
+    ch.onTunnel_MessageIn(p.seq, p);
   }
 
   onMessage_Close2(data: Buffer) {

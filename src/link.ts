@@ -50,6 +50,7 @@ export class Link {
     this.parent = h;
     this.createTime = Date.now();
     this.ws.on("message", this.onMessage.bind(this));
+    this.ws.on("error", this.onError.bind(this));
     this.state = State.Ready;
   }
 
@@ -103,6 +104,11 @@ export class Link {
     this.ws.send(data, {}, cb);
   }
 
+  onError(err: Error): void {
+    debug("on-error", err);
+    this.close();
+  }
+
   onMessage(data: Buffer) {
     this.inPackets++;
     this.inBytes += data.length;
@@ -119,9 +125,6 @@ export class Link {
         this.close();
         return;
       }
-
-        this.parent.onMessage(this, cmd, data);
-        return;
 
       case Cmd.DummyData: {
         this.onDummyData(data);

@@ -59,10 +59,6 @@ export interface Close {
   channel: number;
 }
 
-
-
-
-
 export function PLEN(p: ws.Data) {
   if (p instanceof Buffer) {
     return p.length;
@@ -140,12 +136,20 @@ export function parseOpen2(b: Buffer): Open2 {
 }
 
 
-export function buildData(ch: number, serial: number, data: Buffer): Array<Buffer> {
+export function buildData(ch: number, serial: number, data: Buffer): Buffer {
+  /*
   const w = SmartBuffer.fromBuffer(Buffer.allocUnsafe(8));
   w.writeInt16BE(Type.Data);
   w.writeInt16BE(serial);
   w.writeInt32BE(ch);
   return [w.toBuffer(), data];
+  */
+  const w = SmartBuffer.fromBuffer(Buffer.allocUnsafe(8));
+  w.writeInt16BE(Type.Data);
+  w.writeInt16BE(serial);
+  w.writeInt32BE(ch);
+  w.writeBuffer(data);
+  return w.toBuffer();
 }
 
 export function parseData(data: Buffer): Data {
