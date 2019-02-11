@@ -35,7 +35,7 @@ class GougeServer {
   run() {
     debug("revision:%s, listen:%d", REVISION, this.c.port);
     this.links = new SuperLink(this.c.link);
-    this.links.serverActivate();
+    this.links.serverStart();
     this.server = new WebSocket.Server({port: this.c.port});
     this.server.on("connection", (ws: WebSocket) => {
       this.onConnection(ws);

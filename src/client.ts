@@ -12,7 +12,7 @@ class GougeClient {
   }
 
   fire() {
-    this.link.activate();
+    this.link.clientStart();
   }
 }
 

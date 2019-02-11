@@ -1,21 +1,22 @@
+import { Socket } from "net";
 import CircularBuffer from "circularbuffer";
-import { Link, Data } from "./link";
-import P, { packetLength } from "./packet";
-import { Endpoint } from "./endpoint";
-import { Channel } from "./channel";
-import { D } from "./constants";
 
-const OutQueueSize = 128;
+import { SuperlinkConfig } from "./config";
+import { Link, Data } from "./link";
+import { Builder as B, Parser as P, PLEN, Type } from "./packet";
+import { Tunnel } from "./tunnel";
+import { Channel } from "./channel";
+import { D, SUPERLINK_OUT_QUEUE_SIZE, Code } from "./constants";
+
 
 const debug = D("superlink");
+const debug2 = D("superlink-2");
 
-export interface Config {
-  code: string;
-  lifecycle: number;
-  size: number;
-  target?: string;
-  channelSize: number;
+enum Mode {
+  S = "S",
+  C = "C"
 }
+
 
 interface SendOp {
   data: Data;
@@ -24,7 +25,8 @@ interface SendOp {
 
 export class SuperLink {
   active: boolean = false;
-  c: Config;
+  mode: string;
+  c: SuperlinkConfig;
 
   links: Array<Link>;
   outIndex: number = -1;
@@ -43,36 +45,57 @@ export class SuperLink {
   outPackets: number = 0;
   outBytes: number = 0;
 
-  endpoints: Map<number, Endpoint>;
+  tunnels: Map<number, Tunnel>;
   channels: Array<Channel>;
-  chIndex: number = 0;
+  chIndex: number;
+  minChid: number;
+  maxChid: number;
 
-  constructor(config: Config) {
+  constructor(config: SuperlinkConfig) {
     this.c = config;
+    this.mode = Mode.S;
     this.links = new Array(this.c.size);
-    this.outQueue = new CircularBuffer<SendOp>(OutQueueSize);
+    this.outQueue = new CircularBuffer<SendOp>(SUPERLINK_OUT_QUEUE_SIZE);
     this.cur = Date.now();
     this.lastCur = 0;
-
     this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
-
-    this.endpoints = new Map();
+    this.tunnels = new Map();
     this.channels = new Array<Channel>(this.c.channelSize);
+
+    this.minChid = Math.floor(this.c.channelSize / 2);
+    this.maxChid = this.c.channelSize;
+    this.chIndex = this.minChid;
   }
 
-  serverActivate() {
+
+  setupTunnels() {
+    for (const tc of this.c.tunnels) {
+      debug("superlink.setup.tunnel", tc);
+      const t = new Tunnel(tc);
+      this.tunnels.set(t.id, t);
+      t.start(this);
+    }
+  }
+
+  serverStart() {
     this.tick();
+    this.setupTunnels();
     setInterval(this.run, 500, this);
   }
 
 
-  activate(target?: string) {
+  clientStart(target?: string) {
     if (target) {
       this.c.target = target;
     }
     debug("connect target:%s", this.c.target);
     this.active = true;
+    this.mode = Mode.C;
+    this.maxChid = this.minChid;
+    this.minChid = 0;
+    this.chIndex = 0;
     this.tick();
+    this.setupTunnels();
     setInterval(this.run, 500, this);
   }
 
@@ -131,14 +154,16 @@ export class SuperLink {
         this.writableLinks += 1;
       }
     }
+    /*
     if (this.activeLinks > 0) {
       this.sendSomething();
     }
+    */
   }
 
   sendSomething() {
     for (let i = 0; i < 30000; ++i) {
-      if (!this.send(P.dummyData(i, 1024))) {
+      if (!this.send(B.dummyData(i, 1024))) {
         break;
       }
     }
@@ -157,8 +182,40 @@ export class SuperLink {
     debug("add %d %d", link.slotNumber, link.serial);
     this.resetLink(link.slotNumber);
     this.links[link.slotNumber] = link;
-    link.ws.send(P.nego(this.c.code, link.slotNumber));
+    link.ws.send(B.nego(this.c.code, link.slotNumber));
     link.attach(this);
+  }
+
+  newChannel(t: Tunnel, s: Socket): Channel {
+    // TODO check channel table full.
+    while (true) {
+      if (this.channels[this.chIndex] === undefined) {
+        break;
+      }
+      this.chIndex += 1;
+      if (this.chIndex == this.maxChid) {
+        this.chIndex = this.minChid;
+      }
+    }
+
+    const ch = new Channel({
+      id: this.chIndex,
+      link: this,
+      tunnel: t,
+      socket: s,
+    });
+
+    this.channels[this.chIndex] = ch;
+    this.chIndex += 1;
+    if (this.chIndex == this.maxChid) {
+      this.chIndex = this.minChid;
+    }
+      this.chIndex += 1;
+      if (this.chIndex == this.maxChid) {
+        this.chIndex = this.minChid;
+      }
+
+    return ch;
   }
 
   detach(l: Link) {
@@ -227,12 +284,12 @@ export class SuperLink {
 
   metricIn(data: Data) {
     this.inPackets ++;
-    this.inBytes += packetLength(data);
+    this.inBytes += PLEN(data);
   }
 
   metricOut(data: Data) {
     this.outPackets ++;
-    this.outBytes += packetLength(data);
+    this.outBytes += PLEN(data);
   }
 
   onLinkDrain(l: Link) {
@@ -241,5 +298,93 @@ export class SuperLink {
       debug("on link drain: %d %d,  %d %d", l.slotNumber, l.serial, this.writableLinks, this.outQueue.size);
       this.flushOut();
     }
+  }
+
+  onMessage(l: Link, cmd: number, data: Buffer) {
+    switch (cmd) {
+      case Type.Open: {
+        this.onMessage_Open(data);
+        break;
+      }
+      case Type.Open2: {
+        this.onMessage_Open2(data);
+        break;
+      }
+      case Type.Data: {
+        this.onMessage_Data(data);
+        break;
+      }
+      case Type.Ack: {
+        this.onMessage_Ack(data);
+        break;
+      }
+      case Type.Close: {
+        this.onMessage_Close(data);
+        break;
+      }
+
+      case Type.Close2: {
+        this.onMessage_Close2(data);
+        break;
+      }
+    }
+  }
+
+  onMessage_Open(data: Buffer) {
+    const p = P.open(data);
+    debug2("open - %s %s %s", p.channel, p.tunnel);
+    const ch = new Channel({id: p.channel, link: this, tunnel: this.tunnels.get(p.tunnel)!});
+    this.channels[p.channel] = ch;
+    ch.start();
+  }
+
+  onMessage_Open2(data: Buffer) {
+    const p = P.open2(data);
+    this.channels[p.channel].onConnected();
+  }
+
+  onMessage_Data(data: Buffer) {
+    const p = P.data(data);
+    const ch = this.getChannel(p.channel);
+    if (ch === undefined) {
+      return;
+    }
+    ch.onTunnel_Data(p);
+  }
+
+  onMessage_Ack(data: Buffer) {
+    const p = P.ack(data);
+    const ch = this.getChannel(p.channel);
+    if (ch === undefined) {
+      return;
+    }
+    ch.onTunnel_Ack(p);
+  }
+
+  onMessage_Close(data: Buffer) {
+    const p = P.close(data);
+    const ch = this.getChannel(p.channel);
+    if (ch === undefined) {
+      return;
+    }
+    ch.onTunnel_Close(p);
+  }
+
+  onMessage_Close2(data: Buffer) {
+    const p = P.close2(data);
+    const ch = this.channels[p.channel];
+    if (ch === undefined) {
+      return;
+    }
+
+    ch.onTunnel_Close2(p);
+  }
+
+  getChannel(id: number) {
+    const ch = this.channels[id];
+    if (ch === undefined) {
+      this.send(B.close2(id, Code.NO_SUCH_CHANNEL, id));
+    }
+    return ch;
   }
 }

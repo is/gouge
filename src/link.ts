@@ -1,6 +1,6 @@
 import { SuperLink } from "./superlink";
 import WebSocket from "ws";
-import P, { Type as Cmd, packetLength } from "./packet";
+import { Builder as B, Type as Cmd, PLEN } from "./packet";
 import { D } from "./constants";
 
 export type Data = WebSocket.Data;
@@ -75,14 +75,14 @@ export class Link {
 
   graceClose() {
     this.detach();
-    this.ws.send(P.shutdown());
+    this.ws.send(B.shutdown());
     this.state = State.Shutdown;
   }
 
 
   shutdown() {
     this.detach();
-    this.ws.send(P.shutdown2());
+    this.ws.send(B.shutdown2());
     this.state = State.Shutdown;
   }
 
@@ -99,7 +99,7 @@ export class Link {
 
   send(data: Data, cb?: () => void): void {
     this.outPackets ++;
-    this.outBytes += packetLength(data);
+    this.outBytes += PLEN(data);
     this.ws.send(data, {}, cb);
   }
 
@@ -120,8 +120,23 @@ export class Link {
         return;
       }
 
+        this.parent.onMessage(this, cmd, data);
+        return;
+
       case Cmd.DummyData: {
         this.onDummyData(data);
+        return;
+      }
+
+      /*
+      case Cmd.Open:
+      case Cmd.Open2:
+      case Cmd.Ack:
+      case Cmd.Data:
+      */
+
+      default: {
+        this.parent.onMessage(this, cmd, data);
         return;
       }
     }
@@ -131,14 +146,6 @@ export class Link {
   onDummyData(data: Buffer) {
     this.parent && this.parent.onDummyData(this, data);
   }
-  /*
-  dummyData(data: Buffer) {
-    // const cmd = data.readInt16BE(0);
-    const id = data.readInt16BE(2);
-    const size = data.readInt32BE(4);
-    debug("dummy data %s +%s", id, this.serial);
-  }
-  */
 
   onDrain() {
     if (this.writable) {
