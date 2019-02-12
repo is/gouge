@@ -61,7 +61,7 @@ typings/
 .next
 
 *.d.ts
-*.js
 lib
 
 cf/g.yml
+/g.js
