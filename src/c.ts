@@ -4,6 +4,12 @@ import { SuperlinkConfig, readConfig, GougeConfig } from "./config";
 import { CONFIG_REPO_PATH, SUPERLINK_LABEL_SEPERATOR } from "./constants";
 import yaml from "js-yaml";
 
+const DV = {
+  LINK_LIFECYCLE: 48000,
+  LINK_SIZE: 4
+};
+
+
 interface NodeConfig {
   name: string;
   listen: any;
@@ -35,11 +41,11 @@ function buildNode(node: NodeConfig, big: Repository) {
     clink += 1;
     l.tunnels = l.tunnels.map(x => ({...x}));
     if (l.lifecycle === undefined) {
-      l.lifecycle = 48000;
+      l.lifecycle = DV.LINK_LIFECYCLE;
     }
 
     if (l.size == undefined) {
-      l.size = 4;
+      l.size = DV.LINK_SIZE;
     }
 
     if (l.label.split(SUPERLINK_LABEL_SEPERATOR)[0] == nodeName) {

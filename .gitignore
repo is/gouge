@@ -63,3 +63,5 @@ typings/
 *.d.ts
 *.js
 lib
+
+cf/g.yml
