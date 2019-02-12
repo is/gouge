@@ -13,6 +13,7 @@ const DV = {
 interface NodeConfig {
   name: string;
   listen: any;
+  target?: string;
 }
 
 interface Repository {
@@ -49,6 +50,11 @@ function buildNode(node: NodeConfig, big: Repository) {
     }
 
     if (l.label.split(SUPERLINK_LABEL_SEPERATOR)[0] == nodeName) {
+      if (l.target === undefined) {
+        const remoteName = l.label.split(SUPERLINK_LABEL_SEPERATOR)[1];
+        const n2 = big.nodes.filter((x) => x.name == remoteName)[0];
+          l.target = n2.target;
+      }
       for (const t of l.tunnels) {
         ctunnel += 1;
         if (t.remote !== undefined) {

@@ -20,7 +20,7 @@ class Gouge {
   }
 
   createWsServer() {
-    debug("Listen on:", this.c.listen);
+    debug("listen on:", this.c.listen);
     // TODO - support all type of address
     // this.server = new ws.Server(this.c as ws.ServerOptions);
     this.server = new ws.Server({port: this.c.listen});

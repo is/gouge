@@ -98,7 +98,7 @@ export class Superlink {
 
   setupTunnels() {
     for (const tc of this.c.tunnels) {
-      debug("superlink.setup.tunnel", tc);
+      debug("setup.tunnel", tc);
       const t = new Tunnel(tc);
       this.tunnels.set(t.id, t);
       t.start(this);
@@ -188,7 +188,7 @@ export class Superlink {
 
 
   add(link: Link) {
-    debug("add %d %d", link.slotNumber, link.serial);
+    debug("add %s %d %d", this.c.code, link.slotNumber, link.serial);
     this.resetLink(link.slotNumber);
     this.links[link.slotNumber] = link;
     link.ws.send(B.nego(this.c.code, link.slotNumber));
