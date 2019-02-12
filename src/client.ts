@@ -1,14 +1,14 @@
-import { SuperLink } from "./superlink";
+import { Superlink } from "./superlink";
 import { GougeConfig, readConfig } from "./config";
 import { DEFAULT_CF } from "./constants";
 
 class GougeClient {
   c: GougeConfig;
-  link!: SuperLink;
+  link!: Superlink;
 
   constructor(c: GougeConfig) {
     this.c = c;
-    this.link = new SuperLink(c.link);
+    this.link = new Superlink(c.link);
   }
 
   fire() {

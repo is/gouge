@@ -1,8 +1,9 @@
 import { Socket } from "net";
-import { SuperLink } from "./superlink";
+import { Superlink } from "./superlink";
 import { Tunnel, Mode as TunnelMode } from "./tunnel";
 import { D, Code,
-  CHANNEL_MAX_BUFFER_SIZE, CHANNEL_RING_BUFFER_SIZE, CHANNEL_MAX_SEQ, CHANNEL_RING_BUFFER_RANGE } from "./constants";
+  CHANNEL_MAX_BUFFER_SIZE, CHANNEL_RING_BUFFER_SIZE,
+  CHANNEL_MAX_SEQ, CHANNEL_RING_BUFFER_RANGE } from "./constants";
 import { Builder as B, Parser as P,
   Data, Ack, Close, Close2, PLEN, Type } from "./packet";
 
@@ -28,17 +29,16 @@ export enum ChannelState {
 
 export interface Options {
   id: number;
-  link: SuperLink;
+  link: Superlink;
   tunnel: Tunnel;
   socket?: Socket;
 }
-
 
 export class Channel {
   state: ChannelState = ChannelState.INIT;
   id: number = -1;
   mode: TunnelMode = TunnelMode.UNSET;
-  link: SuperLink;
+  link: Superlink;
   tunnel: Tunnel;
   s!: Socket;
   bufferedSize: number = 0;

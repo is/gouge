@@ -1,5 +1,5 @@
 import { TunnelConfig } from "./config";
-import { SuperLink } from "./superlink";
+import { Superlink } from "./superlink";
 import net from "net";
 import { D } from "./constants";
 
@@ -19,7 +19,7 @@ export class Tunnel {
   mode: Mode = Mode.UNSET;
 
   id: number = -1;
-  link!: SuperLink;
+  link!: Superlink;
   options!: any;
   server!: net.Server;
   serverSocket!: net.Socket;
@@ -29,7 +29,7 @@ export class Tunnel {
     this.id = cf.id;
   }
 
-  start(link: SuperLink) {
+  start(link: Superlink) {
     this.link = link;
     const mode = this.c.mode + this.link.mode;
 

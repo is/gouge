@@ -17,14 +17,13 @@ enum Mode {
   C = "C"
 }
 
-
 interface SendOp {
   data: Data;
   cb?: () => void;
 }
 
-export class SuperLink {
-  active: boolean = false;
+export class Superlink {
+  // active: boolean = false;
   mode: string;
   c: SuperlinkConfig;
 
@@ -89,7 +88,7 @@ export class SuperLink {
       this.c.target = target;
     }
     debug("connect target:%s", this.c.target);
-    this.active = true;
+    // this.active = true;
     this.mode = Mode.C;
     this.maxChid = this.minChid;
     this.minChid = 0;
@@ -99,7 +98,7 @@ export class SuperLink {
     setInterval(this.run, 500, this);
   }
 
-  run(self: SuperLink) {
+  run(self: Superlink) {
     self.tick();
   }
 
@@ -109,7 +108,7 @@ export class SuperLink {
 
     const _size = this.c.size;
     // if active
-    if (this.active) {
+    if (this.mode == Mode.C) {
       // find timeout link and closed
       for (let i = 0; i < _size; ++i) {
         if (this.links[i] === undefined) {

@@ -1,4 +1,4 @@
-import { SuperLink } from "./superlink";
+import { Superlink } from "./superlink";
 import WebSocket from "ws";
 import { Builder as B, Type as Cmd, PLEN } from "./packet";
 import { D } from "./constants";
@@ -22,7 +22,7 @@ const debug = D("link");
 export class Link {
   ws: WebSocket;
   state: State;
-  parent!: SuperLink;
+  parent!: Superlink;
   createTime!: number;
 
   slotNumber: number;
@@ -42,7 +42,7 @@ export class Link {
     this.writable = true;
   }
 
-  attach(h: SuperLink) {
+  attach(h: Superlink) {
     const _ws = <any> this.ws;
     _ws._socket.write = Link.writeMod(_ws._socket.write, this);
     _ws._socket.on("drain", this.onDrain.bind(this));

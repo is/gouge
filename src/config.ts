@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import yaml from "js-yaml";
 
 export interface SuperlinkConfig {
-  code: string;
+  code?: string;
   lifecycle: number;
   size: number;
   target?: string;
@@ -20,11 +20,9 @@ export interface TunnelConfig {
 
 
 export interface GougeConfig {
-  port: number;
-  link: SuperlinkConfig;
+  port?: number;
+  link?: SuperlinkConfig;
 }
-
-
 
 
 export function readConfig(fn: string): GougeConfig {
