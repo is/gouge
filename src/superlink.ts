@@ -168,20 +168,14 @@ export class Superlink {
     */
   }
 
-  /*
-  sendSomething() {
-    for (let i = 0; i < 30000; ++i) {
-      if (!this.send(B.dummyData(i, 1024))) {
-        break;
-      }
-    }
-  }
-  */
 
   newActiveLink(slotNumber: number): void {
     const link = Link.create(slotNumber, this.c.target!);
     link.ws.once("open", () => {
       this.add(link);
+    });
+    link.ws.once("error", (err: Error) => {
+      link.close();
     });
     link.ws.on("close", link.onClose.bind(link));
   }
