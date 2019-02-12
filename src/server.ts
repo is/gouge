@@ -1,8 +1,8 @@
 import WebSocket from "ws";
 import { Superlink } from "./superlink";
-import { GougeConfig, readConfig } from "./config";
+import { GougeSimpleConfig, readConfig } from "./config";
 import { Link } from "./link";
-import { parseNego } from "./packet";
+import { Parser as P } from "./packet";
 import { DEFAULT_CF, D } from "./constants";
 
 const debug = D("server");
@@ -10,17 +10,16 @@ const debug = D("server");
 const REVISION = "0.1r1";
 
 class GougeServer {
-  c: GougeConfig;
+  c: GougeSimpleConfig;
   link!: Superlink;
-  links!: Map<string, Superlink>;
   server!: WebSocket.Server;
 
-  constructor(cf: GougeConfig) {
+  constructor(cf: GougeSimpleConfig) {
     this.c = cf;
   }
 
   negotiate(l: Link, message: Buffer) {
-    const nego = parseNego(message);
+    const nego = P.nego(message);
     l.slotNumber = nego.slotNumber;
     this.link.add(l);
   }
@@ -34,10 +33,10 @@ class GougeServer {
   }
 
   run() {
-    debug("revision:%s, listen:%d", REVISION, this.c.port);
+    debug("revision:%s, listen:%d", REVISION, this.c.listen);
     this.link = new Superlink(this.c.link);
     this.link.serverStart();
-    this.server = new WebSocket.Server({port: this.c.port});
+    this.server = new WebSocket.Server({port: this.c.listen});
     this.server.on("connection", (ws: WebSocket) => {
       this.onConnection(ws);
     });

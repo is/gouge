@@ -13,3 +13,4 @@ test("ObjectArray", () => {
   delete sa[0];
   expect(sa[0]).toBeUndefined();
 });
+

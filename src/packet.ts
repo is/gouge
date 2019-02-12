@@ -255,6 +255,7 @@ export const Builder = {
 };
 
 export const Parser = {
+  nego: parseNego,
   open: parseOpen,
   open2: parseOpen2,
   data: parseData,

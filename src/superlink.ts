@@ -66,22 +66,20 @@ export class Superlink {
     this.chIndex = this.minChid;
   }
 
-
-  setupTunnels() {
-    for (const tc of this.c.tunnels) {
-      debug("superlink.setup.tunnel", tc);
-      const t = new Tunnel(tc);
-      this.tunnels.set(t.id, t);
-      t.start(this);
+  start(mode: String) {
+    if (mode == Mode.C) {
+      this.clientStart();
+    } else {
+      this.serverStart();
     }
   }
+
 
   serverStart() {
     this.tick();
     this.setupTunnels();
     setInterval(this.run, 500, this);
   }
-
 
   clientStart(target?: string) {
     if (target) {
@@ -97,6 +95,16 @@ export class Superlink {
     this.setupTunnels();
     setInterval(this.run, 500, this);
   }
+
+  setupTunnels() {
+    for (const tc of this.c.tunnels) {
+      debug("superlink.setup.tunnel", tc);
+      const t = new Tunnel(tc);
+      this.tunnels.set(t.id, t);
+      t.start(this);
+    }
+  }
+
 
   run(self: Superlink) {
     self.tick();

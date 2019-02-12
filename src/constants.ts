@@ -9,11 +9,13 @@ export const CHANNEL_RING_BUFFER_RANGE = 96;
 export const CHANNEL_MAX_SEQ = 0x8000;
 
 export const CHANNEL_MAX_BUFFER_SIZE = 0x400 * 512;
-export const SUPERLINK_OUT_QUEUE_SIZE = 0x400;
 
+export const SUPERLINK_OUT_QUEUE_SIZE = 0x400;
+export const SUPERLINK_LABEL_SEPERATOR = ",";
 
 export const NEGOTIATE_SIGN = "1024204840968192";
 export const DEFAULT_CF = "cf/g0.yml";
+export const CONFIG_REPO_PATH = "cf/repo.yml";
 
 export function D(namespace: string): debug.IDebugger {
   return debug(namespace);

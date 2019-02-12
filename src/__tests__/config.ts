@@ -17,7 +17,7 @@ links:
 
   expect(cf.links.length).toBe(3);
   expect(cf.node).toBe("t0");
-  expect(cf.port).toBeUndefined();
+  expect(cf.listen).toBeUndefined();
 
   const c0 = cf.links.filter((i) => i.label.split(",")[0] == "t0");
   expect(c0.length).toBe(3);
