@@ -168,6 +168,7 @@ export class Superlink {
     */
   }
 
+  /*
   sendSomething() {
     for (let i = 0; i < 30000; ++i) {
       if (!this.send(B.dummyData(i, 1024))) {
@@ -175,6 +176,7 @@ export class Superlink {
       }
     }
   }
+  */
 
   newActiveLink(slotNumber: number): void {
     const link = Link.create(slotNumber, this.c.target!);
@@ -275,7 +277,13 @@ export class Superlink {
         return;
       }
       const op = this.outQueue.deq()!;
-      link.send(op.data, op.cb);
+      try {
+        link.send(op.data, op.cb);
+      } catch (e) {
+        debug("flush-out-error", e);
+        link.close();
+        continue;
+      }
       if (!link.writable) {
         this.writableLinks -= 1;
       }

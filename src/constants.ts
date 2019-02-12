@@ -15,6 +15,8 @@ export const SUPERLINK_LABEL_SEPERATOR = ",";
 
 export const NEGOTIATE_SIGN = "1024204840968192";
 export const DEFAULT_CF = "cf/g0.yml";
+
+export const CONFIG_PATH = "cf/g.yml";
 export const CONFIG_REPO_PATH = "cf/repo.yml";
 
 export function D(namespace: string): debug.IDebugger {

@@ -5,7 +5,7 @@ import { Link } from "./link";
 import { GougeConfig, readConfig } from "./config";
 import { Parser as P } from "./packet";
 import { D,
-  SUPERLINK_LABEL_SEPERATOR } from "./constants";
+  SUPERLINK_LABEL_SEPERATOR, CONFIG_PATH } from "./constants";
 
 const debug = D("G");
 
@@ -54,7 +54,7 @@ class Gouge {
   }
 
   startup(args: Array<string>) {
-    let cfPath = "cf/g1.yml";
+    let cfPath = CONFIG_PATH;
     if (args.length > 2) {
       cfPath = args[2];
     }
