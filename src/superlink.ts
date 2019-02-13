@@ -9,8 +9,9 @@ import { Channel } from "./channel";
 import { D, SUPERLINK_OUT_QUEUE_SIZE, Code } from "./constants";
 
 
-const debug = D("superlink");
-const debug2 = D("superlink-2");
+const debug = D("S");
+const debug2 = D("S2");
+const d_data = debug.extend("DATA");
 
 enum Mode {
   S = "S",
@@ -51,6 +52,8 @@ export class Superlink {
   minChid: number;
   maxChid: number;
 
+  lastMessageLink!: Link;
+
   constructor(config: SuperlinkConfig) {
     this.c = config;
     this.mode = Mode.S;
@@ -76,7 +79,6 @@ export class Superlink {
       this.serverStart();
     }
   }
-
 
   serverStart() {
     this.tick();
@@ -164,13 +166,7 @@ export class Superlink {
         this.writableLinks += 1;
       }
     }
-    /*
-    if (this.activeLinks > 0) {
-      this.sendSomething();
-    }
-    */
   }
-
 
   newActiveLink(slotNumber: number): void {
     const link = Link.create(slotNumber, this.c.target!);
@@ -313,7 +309,8 @@ export class Superlink {
   }
 
   onMessage(l: Link, cmd: number, data: Buffer) {
-    debug("on-message %d %s %d", l.slotNumber, Type[cmd], data.length);
+    this.lastMessageLink = l;
+    // debug("on-message %d %s %d", l.slotNumber, Type[cmd], data.length);
     switch (cmd) {
       case Type.Open: {
         this.onMessage_Open(data);
@@ -358,6 +355,8 @@ export class Superlink {
 
   onMessage_Data(data: Buffer) {
     const p = P.data(data);
+    d_data("data _ link:%d . ch:%d . seq:%d . len:%d",
+      this.lastMessageLink.slotNumber, p.channel, p.seq, p.payload.length);
     const ch = this.getChannel(p.channel);
     if (ch === undefined) {
       return;

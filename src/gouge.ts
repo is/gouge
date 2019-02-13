@@ -7,6 +7,8 @@ import { Parser as P } from "./packet";
 import { D,
   SUPERLINK_LABEL_SEPERATOR, CONFIG_PATH } from "./constants";
 
+const REVISION = "0.0.2r1";
+
 const debug = D("G");
 
 class Gouge {
@@ -83,5 +85,6 @@ class Gouge {
   }
 }
 
+console.log("+ Gouge - %s", REVISION);
 const g = new Gouge();
 g.startup(process.argv);
