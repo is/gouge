@@ -26,6 +26,7 @@ export class Superlink {
   // active: boolean = false;
   mode: string;
   c: SuperlinkConfig;
+  name: string;
 
   links: Array<Link>;
   outIndex: number = -1;
@@ -64,6 +65,8 @@ export class Superlink {
     this.minChid = Math.floor(this.c.channelSize / 2);
     this.maxChid = this.c.channelSize;
     this.chIndex = this.minChid;
+
+    this.name = this.c.label.replace(",", ":");
   }
 
   start(mode: String) {
@@ -182,7 +185,7 @@ export class Superlink {
 
 
   add(link: Link) {
-    debug("add %s %d %d", this.c.code, link.slotNumber, link.serial);
+    debug("add %s %d %d", this.name, link.slotNumber, link.serial);
     this.resetLink(link.slotNumber);
     this.links[link.slotNumber] = link;
     link.ws.send(B.nego(this.c.code, link.slotNumber));
