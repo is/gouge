@@ -3,21 +3,21 @@ import { Superlink } from "./superlink";
 import { Tunnel, Mode as TunnelMode } from "./tunnel";
 import { D, Code,
   CHANNEL_MAX_BUFFER_SIZE, CHANNEL_RING_BUFFER_SIZE,
-  CHANNEL_MAX_SEQ, CHANNEL_RING_BUFFER_RANGE } from "./constants";
+  CHANNEL_MAX_SEQ, CHANNEL_RING_BUFFER_RANGE,
+  CHANNEL_OUT_BUFFER_SIZE, CHANNEL_OUT_BUFFER_TIMEOUT_MS } from "./constants";
 import { Builder as B, Parser as P,
   Data, Ack, Close, Close2, PLEN, Type } from "./packet";
+import { SmartBuffer } from "smart-buffer";
 
 type ChannelOrderPacket = Data | Close2 ;
 
-const DMSG = D("ch-msg");
-const debug = D("ch");
+const DMSG = D("C:MESSAGE");
+const debug = D("C");
 
 interface ChannelPacket {
   cmd: Type;
   seq: number;
 }
-
-
 
 export enum ChannelState {
   INIT = 0,
@@ -50,6 +50,8 @@ export class Channel {
   inSeq: number = 0;
   inHead: number = 0;
 
+  smallBuffer: SmartBuffer;
+  smallBufferTick: boolean = false;
 
   constructor(opts: Options) {
     this.id = opts.id;
@@ -61,7 +63,7 @@ export class Channel {
     if (opts.socket !== undefined) {
       this.socket = opts.socket;
     }
-
+    this.smallBuffer = new SmartBuffer({size: CHANNEL_OUT_BUFFER_SIZE});
     this.state = ChannelState.INIT;
   }
 
@@ -84,6 +86,7 @@ export class Channel {
   onClose(hadError: boolean) {
     DMSG("on-close %d %d", this.id, this.state);
     if (this.state != ChannelState.CLOSED) {
+      this.flushSmallBuffer(this);
       this.link.send(B.close(this.id, this.nextOutSeq()));
     }
     this.state = ChannelState.CLOSED;
@@ -114,6 +117,41 @@ export class Channel {
 
   // 收到数据
   onData(data: Buffer) {
+    let sbsize = this.smallBuffer.writeOffset;
+    const bsize = data.length;
+
+    if (sbsize > 0 && (sbsize + bsize) > CHANNEL_OUT_BUFFER_SIZE) {
+      debug("FLUSH2 - %d", sbsize);
+      this.sendData(this.smallBuffer.toBuffer());
+      this.smallBuffer.clear();
+      sbsize = 0;
+    }
+
+    if (bsize > CHANNEL_OUT_BUFFER_SIZE) {
+      this.sendData(data);
+      return;
+    }
+
+
+    this.smallBuffer.writeBuffer(data);
+
+    if (!this.smallBufferTick) {
+      this.smallBufferTick = true;
+      setTimeout(this.flushSmallBuffer,
+        CHANNEL_OUT_BUFFER_TIMEOUT_MS, this);
+    }
+  }
+
+  flushSmallBuffer(c: Channel) {
+    if (c.smallBuffer.writeOffset > 0) {
+      debug("FLUSH - %d", c.smallBuffer.writeOffset);
+      c.sendData(c.smallBuffer.toBuffer());
+      c.smallBuffer.clear();
+    }
+    c.smallBufferTick = false;
+  }
+
+  sendData(data: Buffer) {
     this.bufferedSize += data.length;
 
     const p = B.data(this.id, this.nextOutSeq(), data);

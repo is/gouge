@@ -355,7 +355,7 @@ export class Superlink {
 
   onMessage_Data(data: Buffer) {
     const p = P.data(data);
-    d_data("data _ link:%d . ch:%d . seq:%d . len:%d",
+    d_data("data -- link:%d / ch:%d / seq:%d / len:%d",
       this.lastMessageLink.slotNumber, p.channel, p.seq, p.payload.length);
     const ch = this.getChannel(p.channel);
     if (ch === undefined) {
