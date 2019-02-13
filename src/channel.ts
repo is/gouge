@@ -90,6 +90,17 @@ export class Channel {
     this.detach();
   }
 
+  onError(err: Error) {
+    DMSG("on-error %d %s", this.id, err);
+    if (this.state != ChannelState.CLOSED) {
+      this.link.send(B.close(this.id, this.nextOutSeq()));
+    }
+    this.state = ChannelState.CLOSED;
+    this.detach();
+    this.s.end();
+  }
+
+
   // 链接完成,发送消息,开始工作
   onReady() {
     this.state = ChannelState.CONNECTED;
@@ -226,6 +237,7 @@ export class Channel {
     s.on("close", this.onClose.bind(this));
     s.on("ready", this.onReady.bind(this));
     s.on("data", this.onData.bind(this));
+    s.on("error", this.onError.bind(this));
     // s.on("drain", this.onDrain.bind(this));
     s.connect(this.tunnel.getSocketOption());
   }
@@ -236,6 +248,7 @@ export class Channel {
     s.on("data", this.onData.bind(this));
     // s.on("drain", this.onDrain.bind(this));
     s.on("close", this.onClose.bind(this));
+    s.on("error", this.onError.bind(this));
     this.state = ChannelState.CONNECTING;
     this.link.send(B.open(this.tunnel.id, this.id));
   }

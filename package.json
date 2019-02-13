@@ -25,7 +25,7 @@
     "tslint": "^5.12.1",
     "typescript": "^3.2.2",
     "webpack": "^4.28.4",
-    "webpack-cli": "^3.2.1"
+    "webpack-cli": "^3.2.3"
   },
   "test": "jest",
   "scripts": {
