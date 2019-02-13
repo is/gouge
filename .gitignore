@@ -63,5 +63,6 @@ typings/
 *.d.ts
 lib
 
-cf/g.yml
+/cfs
+/cf/g.yml
 /g.js
