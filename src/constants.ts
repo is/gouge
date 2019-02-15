@@ -21,9 +21,7 @@ export const DEFAULT_CF = "cf/g0.yml";
 export const CONFIG_PATH = "cf/g.yml";
 export const CONFIG_REPO_PATH = "cfs/repo.yml";
 
-export function D(namespace: string): debug.IDebugger {
-  return debug(namespace);
-}
+export { debug, debug as D, debug as DEBUG };
 
 export enum Code {
   NO_SUCH_CHANNEL = 3000,

@@ -17,7 +17,7 @@ function nextLinkSerial(): number {
   return ++linkSerial;
 }
 
-const debug = D("link");
+const debug = D("L");
 
 export class Link {
   ws: WebSocket;

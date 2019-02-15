@@ -351,7 +351,7 @@ export class Superlink {
   onMessage_Open2(data: Buffer) {
     const p = P.open2(data);
     debug2("open2 - %s", p.channel);
-    const ch = this.getChannel(p.channel)
+    const ch = this.getChannel(p.channel);
     if (ch === undefined) {
       return;
     }
