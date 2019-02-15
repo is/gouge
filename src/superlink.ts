@@ -342,7 +342,7 @@ export class Superlink {
 
   onMessage_Open(data: Buffer) {
     const p = P.open(data);
-    debug2("open - %s %s %s", p.channel, p.tunnel);
+    debug2("open - %s %s", p.channel, p.tunnel);
     const ch = new Channel({id: p.channel, link: this, tunnel: this.tunnels.get(p.tunnel)!});
     this.channels[p.channel] = ch;
     ch.start();
@@ -350,6 +350,11 @@ export class Superlink {
 
   onMessage_Open2(data: Buffer) {
     const p = P.open2(data);
+    debug2("open2 - %s", p.channel);
+    const ch = this.getChannel(p.channel)
+    if (ch === undefined) {
+      return;
+    }
     this.channels[p.channel].onConnected();
   }
 
