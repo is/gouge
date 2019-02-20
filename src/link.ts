@@ -83,8 +83,10 @@ export class Link {
 
   shutdown() {
     this.detach();
-    this.ws.send(B.shutdown2());
-    this.state = State.Shutdown;
+    if (this.state == State.Ready) {
+      this.ws.send(B.shutdown2());
+      this.state = State.Shutdown;
+    }
   }
 
   onClose(ws: WebSocket) {
