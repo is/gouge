@@ -69,3 +69,8 @@ lib
 /g.js
 
 /r
+/g-x86
+/g-x64
+
+/src/1_TODO
+/src/0_ERRORS
