@@ -6,7 +6,7 @@ import { Link, Data } from "./link";
 import { Builder as B, Parser as P, PLEN, Type } from "./packet";
 import { Tunnel } from "./tunnel";
 import { Channel } from "./channel";
-import { D, SUPERLINK_OUT_QUEUE_SIZE, Code } from "./constants";
+import { D, CHANNEL_SIZE, SUPERLINK_OUT_QUEUE_SIZE, Code } from "./constants";
 
 
 const debug = D("S");
@@ -63,6 +63,10 @@ export class Superlink {
     this.lastCur = 0;
     this.newLinkPeriod = Math.floor(this.c.lifecycle / this.c.size);
     this.tunnels = new Map();
+
+    if (this.c.channelSize === undefined) {
+        this.c.channelSize = CHANNEL_SIZE;
+    }
     this.channels = new Array<Channel>(this.c.channelSize);
 
     this.minChid = Math.floor(this.c.channelSize / 2);
@@ -200,6 +204,7 @@ export class Superlink {
       }
     }
 
+    debug('new channel ...', this.chIndex, this.minChid, this.maxChid)
     const ch = new Channel({
       id: this.chIndex,
       link: this,
