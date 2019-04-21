@@ -152,6 +152,23 @@ export class Channel {
   }
 
   sendData(data: Buffer) {
+    // Split big packet into small packets.
+    const MAX_PACKET_SIZE = 28664;
+    if (data.length > MAX_PACKET_SIZE) {
+      const totalSize = data.length;
+      let offset = 0;
+
+      while (offset != totalSize) {
+        let size = totalSize - offset;
+        if (size > MAX_PACKET_SIZE) {
+          size = MAX_PACKET_SIZE;
+        }
+        this.sendData(data.slice(offset, offset + size));
+        offset += size;
+      }
+      return;
+    }
+
     this.bufferedSize += data.length;
 
     const p = B.data(this.id, this.nextOutSeq(), data);

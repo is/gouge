@@ -137,14 +137,7 @@ export function parseOpen2(b: Buffer): Open2 {
 
 
 export function buildData(ch: number, serial: number, data: Buffer): Buffer {
-  /*
-  const w = SmartBuffer.fromBuffer(Buffer.allocUnsafe(8));
-  w.writeInt16BE(Type.Data);
-  w.writeInt16BE(serial);
-  w.writeInt32BE(ch);
-  return [w.toBuffer(), data];
-  */
-  const w = SmartBuffer.fromBuffer(Buffer.allocUnsafe(8));
+  const w = new SmartBuffer({size: data.length + 8});
   w.writeInt16BE(Type.Data);
   w.writeInt16BE(serial);
   w.writeInt32BE(ch);
