@@ -75,7 +75,7 @@ function buildNode(node: NodeConfig, big: Repository) {
   }
 
   // console.log(o);
-  const nodePath = `cf/${nodeName}`;
+  const nodePath = `cfs/__${nodeName}`;
   const cfPath = `${nodePath}/g.yml`;
   if (!fs.existsSync(nodePath)) {
     fs.mkdirSync(nodePath);
