@@ -3,11 +3,10 @@ import { Superlink } from "./superlink";
 import { GougeSimpleConfig, readConfig } from "./config";
 import { Link } from "./link";
 import { Parser as P } from "./packet";
-import { DEFAULT_CF, D } from "./constants";
+import { DEFAULT_CF, D, REVISION } from "./constants";
 
 const debug = D("server");
 
-const REVISION = "0.1r1";
 
 class GougeServer {
   c: GougeSimpleConfig;

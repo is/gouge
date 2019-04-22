@@ -4,10 +4,8 @@ import { Superlink } from "./superlink";
 import { Link } from "./link";
 import { GougeConfig, readConfig } from "./config";
 import { Parser as P } from "./packet";
-import { D,
+import { D, REVISION,
   SUPERLINK_LABEL_SEPERATOR, CONFIG_PATH } from "./constants";
-
-const REVISION = "0.0.2r1";
 
 const debug = D("G");
 

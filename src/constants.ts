@@ -1,5 +1,6 @@
 import debug from "debug";
 
+export const REVISION = "0.1.0r1";
 export const SEQ_SIZE = 16384;
 export const CHANNEL_SIZE = 0x1000;
 export const CHANNEL_HALF_SIZE = 0x800;
