@@ -64,8 +64,6 @@ typings/
 lib
 
 /cfs
-/cf/g.yml
-/cf/**/g.yml
 /g.js
 
 /r
