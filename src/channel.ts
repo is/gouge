@@ -185,7 +185,7 @@ export class Channel {
 
   nextOutSeq(): number {
     this.outSeq += 1;
-    if (this.outSeq > CHANNEL_MAX_SEQ) {
+    if (this.outSeq >= CHANNEL_MAX_SEQ) {
       this.outSeq = 0;
     }
     return this.outSeq;
