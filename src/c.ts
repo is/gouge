@@ -78,7 +78,7 @@ function buildNode(node: NodeConfig, big: Repository) {
   const nodePath = `cfs/_/${nodeName}`;
   const cfPath = `${nodePath}/g.yml`;
   if (!fs.existsSync(nodePath)) {
-    fs.mkdirSync(nodePath);
+    fs.mkdirSync(nodePath, {recursive: true});
   }
   fs.writeFileSync(cfPath, yaml.safeDump(o));
   console.log("%s - %s - %d links, %d tunnels",
