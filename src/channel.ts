@@ -51,7 +51,8 @@ export class Channel {
   inHead: number = 0;
 
   smallBuffer: SmartBuffer;
-  smallBufferTick: boolean = false;
+  smallBufferTimer?: number = undefined;
+  // smallBufferTick: boolean = false;
 
   constructor(opts: Options) {
     this.id = opts.id;
@@ -63,6 +64,7 @@ export class Channel {
     if (opts.socket !== undefined) {
       this.socket = opts.socket;
     }
+
     this.smallBuffer = new SmartBuffer({size: CHANNEL_OUT_BUFFER_SIZE});
     this.state = ChannelState.INIT;
   }
@@ -117,14 +119,12 @@ export class Channel {
 
   // 收到数据
   onData(data: Buffer) {
-    let sbsize = this.smallBuffer.writeOffset;
+    const sbsize = this.smallBuffer.writeOffset;
     const bsize = data.length;
 
     if (sbsize > 0 && (sbsize + bsize) > CHANNEL_OUT_BUFFER_SIZE) {
-      debug("FLUSH2 - %d", sbsize);
-      this.sendData(this.smallBuffer.toBuffer());
-      this.smallBuffer.clear();
-      sbsize = 0;
+      clearTimeout(this.smallBufferTimer);
+      this.flushSmallBuffer(this);
     }
 
     if (bsize > CHANNEL_OUT_BUFFER_SIZE) {
@@ -132,12 +132,9 @@ export class Channel {
       return;
     }
 
-
     this.smallBuffer.writeBuffer(data);
-
-    if (!this.smallBufferTick) {
-      this.smallBufferTick = true;
-      setTimeout(this.flushSmallBuffer,
+    if (!this.smallBufferTimer === undefined) {
+      this.smallBufferTimer = setTimeout(this.flushSmallBuffer,
         CHANNEL_OUT_BUFFER_TIMEOUT_MS, this);
     }
   }
@@ -148,7 +145,7 @@ export class Channel {
       c.sendData(c.smallBuffer.toBuffer());
       c.smallBuffer.clear();
     }
-    c.smallBufferTick = false;
+    c.smallBufferTimer = undefined;
   }
 
   sendData(data: Buffer) {
