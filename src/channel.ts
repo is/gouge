@@ -133,7 +133,7 @@ export class Channel {
     }
 
     this.smallBuffer.writeBuffer(data);
-    if (!this.smallBufferTimer === undefined) {
+    if (this.smallBufferTimer === undefined) {
       this.smallBufferTimer = setTimeout(this.flushSmallBuffer,
         CHANNEL_OUT_BUFFER_TIMEOUT_MS, this);
     }
