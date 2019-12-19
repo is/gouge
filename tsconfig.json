@@ -9,5 +9,9 @@
     "rootDir": "./src",
     "outDir": "./lib",
     "strict": true
-  }
+  },
+  "exclude": [
+    "**/__tests__/*.ts",
+    "node_modules"
+  ]
 }

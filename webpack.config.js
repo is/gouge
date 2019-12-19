@@ -24,5 +24,6 @@ module.exports = {
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname),
-  }
+  },
+  devtool: 'cheap-source-map'
 };
