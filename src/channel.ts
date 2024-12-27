@@ -168,15 +168,16 @@ export class Channel {
 
     this.bufferedSize += data.length;
 
-    const p = B.data(this.id, this.nextOutSeq(), data);
+    const nextSeq = this.nextOutSeq()
+    const p = B.data(this.id, nextSeq, data);
     const res = this.link.send(p);
 
     DMSG("ondata %d %d %s", this.id, PLEN(p), res);
 
-    if (this.bufferedSize >= CHANNEL_MAX_BUFFER_SIZE) {
+    if (this.bufferedSize >= CHANNEL_MAX_BUFFER_SIZE && !this.isPaused) {
       this.isPaused = true;
-      this.socket.pause();
-      DMSG("data-paused %d", this.id);
+      this.s.pause();
+      DMSG("data-paused %d bufferd:%d seq:%d size:%d", this.id, this.bufferedSize, nextSeq, data.length);
     }
   }
 
@@ -199,7 +200,7 @@ export class Channel {
         return true;
       }
     } else {
-      if ((CHANNEL_MAX_SEQ - this.inSeq + seq) < CHANNEL_RING_BUFFER_RANGE) {
+      if ((CHANNEL_MAX_SEQ + seq - this.inSeq ) < CHANNEL_RING_BUFFER_RANGE) {
         return true;
       }
     }
@@ -209,11 +210,13 @@ export class Channel {
   onTunnel_MessageIn(seq: number, pkt: ChannelPacket) {
     if (!this.isInSeqRange(seq)) {
       debug("on-tunnel-message-in.outofrange %d %d %d", this.id, seq, this.inSeq);
+      DMSG("on-tunnel-message-in.outofrange %d %d %d", this.id, seq, this.inSeq);
       const p = B.close2(this.id, Code.CHANNEL_SEQ_OUTOF_RANGE, seq);
       this.link.send(p);
       this.onTunnel_Close2(P.close2(p));
     }
 
+    DMSG("message-in seq:%d, inseq:%d", seq, this.inSeq);
     const pos = seq % CHANNEL_RING_BUFFER_SIZE;
     this.ring[pos] = pkt;
 
@@ -226,7 +229,7 @@ export class Channel {
 
       delete this.ring[pos2];
       this.inSeq += 1;
-      if (this.inSeq > CHANNEL_MAX_SEQ) {
+      if (this.inSeq >= CHANNEL_MAX_SEQ) {
         this.inSeq = 0;
       }
 
@@ -265,6 +268,11 @@ export class Channel {
     if (this.bufferedSize < CHANNEL_MAX_BUFFER_SIZE && this.isPaused) {
       this.isPaused = false;
       this.s.resume();
+      DMSG("data-resume id:%d buffer:%d ack.seq:%d ack.size:%d",
+        this.id, this.bufferedSize, ack.seq, ack.size);
+    } else {
+      DMSG("data-ack id:%d buffer:%d ack.seq:%d ack.size:%d paused:%d",
+        this.id, this.bufferedSize, ack.seq, ack.size, this.isPaused);
     }
   }
 
